@@ -20,8 +20,7 @@ public class NoteController {
         produces = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
     public Note createNote(@RequestBody Note note) {
-        Note createdNote = noteService.createNote(note);
-        return createdNote;
+        return noteService.createNote(note);
     }
 
     @RequestMapping(value = "/{id}",
@@ -34,5 +33,17 @@ public class NoteController {
             throw new ResourceNotFoundException("Note not found");
         }
         return retrievedNote;
+    }
+
+    @RequestMapping(value = "/{id}",
+            method = RequestMethod.DELETE,
+            produces = "application/json")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteNote(@PathVariable long id) {
+        try {
+            noteService.deleteNote(id);
+        } catch (IllegalArgumentException exception) {
+            // Delete should be idempotent.
+        }
     }
 }

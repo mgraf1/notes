@@ -17,8 +17,11 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -39,11 +42,12 @@ public class NoteControllerTests {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndGetNote() throws Exception {
+    public void shouldBeAbleToCreateGetAndDeleteNote() throws Exception {
         String bodyText = "A test body";
         Note note = new Note(bodyText);
         String jsonBody = mapper.writeValueAsString(note);
 
+        // Create Note.
         MvcResult result = mvc.perform(post("/api/notes")
                 .content(jsonBody)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -54,9 +58,22 @@ public class NoteControllerTests {
         MockHttpServletResponse response = result.getResponse();
         Note responseNote = mapper.readValue(response.getContentAsString(), Note.class);
 
+        // Get Note.
         mvc.perform(get("/api/notes/" + responseNote.getId())
             .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.body")
+                .value(equalTo(note.getBody())));
+
+        // Delete Note.
+        mvc.perform(delete("/api/notes/" + responseNote.getId())
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isNoContent());
+
+        // Note is no longer there.
+        mvc.perform(get("/api/notes/" + responseNote.getId())
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -73,9 +90,15 @@ public class NoteControllerTests {
 
     @Test
     public void get_whenResourceIsNotThere_shouldReturnNotFound() throws Exception {
-
         mvc.perform(get("/api/notes/3")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void delete_whenNoResourceExists_shouldReturnNoContent() throws Exception {
+        mvc.perform(delete("/api/notes/3")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
     }
 }
