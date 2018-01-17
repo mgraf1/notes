@@ -7,6 +7,9 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class NoteService {
 
@@ -31,5 +34,12 @@ public class NoteService {
 
     public void updateNote(Note note) {
         noteRepository.save(note);
+    }
+
+    public List<Note> getAllNotes() {
+        Iterable<Note> iterableNotes = noteRepository.findAll();
+        List<Note> notes = new ArrayList<>();
+        iterableNotes.forEach(notes::add);
+        return notes;
     }
 }

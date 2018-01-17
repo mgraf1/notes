@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping(value="/api/notes")
@@ -57,6 +58,14 @@ public class NoteController {
         }
         this.getNote(id);
         noteService.updateNote(note);
+    }
+
+    @RequestMapping(value = "",
+            method = RequestMethod.GET,
+            produces = "application/json")
+    @ResponseStatus(HttpStatus.OK)
+    public List<Note> getAllNotes() {
+        return noteService.getAllNotes();
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -1,23 +1,35 @@
 package notes.controllers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import notes.Application;
+import notes.data.NoteRepository;
 import notes.models.Note;
+import org.aspectj.weaver.TypeFactory;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -27,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = Application.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class NoteControllerTests {
 
     @Autowired
@@ -142,23 +155,61 @@ public class NoteControllerTests {
 
     @Test
     public void update_whenContentTypeIsNotSet_shouldReturnUnsupportedMediaType() throws Exception {
-        String bodyText = "A test body";
-        Note note = new Note(bodyText);
+        long id = createNote("some note body");
+
+        Note note = new Note(id, "updated note");
+        String jsonBody = mapper.writeValueAsString(note);
+
+        mvc.perform(put("/api/notes/" + id)
+                .content(jsonBody)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnsupportedMediaType());
+    }
+
+    @Test
+    public void getAll_shouldReturnAllNotes() throws Exception {
+        long id1 = createNote("Some note");
+        long id2 = createNote("Some other note");
+
+        MvcResult result = mvc.perform(get("/api/notes")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        MockHttpServletResponse response = result.getResponse();
+        List<Note> responseNotes = mapper.readValue(response.getContentAsString(),
+                new TypeReference<List<Note>>(){});
+
+        assertThat(responseNotes, hasItem(hasProperty("id", is(id1))));
+        assertThat(responseNotes, hasItem(hasProperty("id", is(id2))));
+    }
+
+    @Test
+    public void getAll_withNoNotes_shouldReturnEmptyList() throws Exception {
+        MvcResult result = mvc.perform(get("/api/notes")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        MockHttpServletResponse response = result.getResponse();
+        List<Note> responseNotes = mapper.readValue(response.getContentAsString(),
+                new TypeReference<List<Note>>(){});
+
+        assertEquals(true, responseNotes.isEmpty());
+    }
+
+    private long createNote(String noteBody) throws Exception {
+        Note note = new Note(noteBody);
         String jsonBody = mapper.writeValueAsString(note);
 
         MvcResult result = mvc.perform(post("/api/notes")
                 .content(jsonBody)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isCreated())
                 .andReturn();
 
         MockHttpServletResponse response = result.getResponse();
         Note responseNote = mapper.readValue(response.getContentAsString(), Note.class);
-
-        mvc.perform(put("/api/notes/" + responseNote.getId())
-                .content(jsonBody)
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnsupportedMediaType());
+        return responseNote.getId();
     }
 }
