@@ -3,11 +3,9 @@ package notes.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import notes.Application;
 import notes.models.Note;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class NoteControllerTests {
 
     @Autowired
-    WebApplicationContext context;
+    private WebApplicationContext context;
 
     private MockMvc mvc;
     private ObjectMapper mapper;
@@ -62,7 +60,7 @@ public class NoteControllerTests {
     }
 
     @Test
-    public void create_shouldReturnUnsupportedMediaTypeIfContentTypeIsNotSet() throws Exception {
+    public void create_whenContentTypeIsNotSet_shouldReturnUnsupportedMediaType() throws Exception {
         String bodyText = "A test body";
         Note note = new Note(bodyText);
         String jsonBody = mapper.writeValueAsString(note);
@@ -71,5 +69,13 @@ public class NoteControllerTests {
                 .content(jsonBody)
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnsupportedMediaType());
+    }
+
+    @Test
+    public void get_whenResourceIsNotThere_shouldReturnNotFound() throws Exception {
+
+        mvc.perform(get("/api/notes/3")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 }

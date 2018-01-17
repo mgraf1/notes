@@ -3,6 +3,7 @@ package notes.controllers;
 import notes.models.Note;
 import notes.services.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +30,9 @@ public class NoteController {
     @ResponseStatus(HttpStatus.OK)
     public Note getNote(@PathVariable long id) {
         Note retrievedNote = noteService.getNote(id);
+        if (retrievedNote == null) {
+            throw new ResourceNotFoundException("Note not found");
+        }
         return retrievedNote;
     }
 }
