@@ -23,13 +23,13 @@ public class Note {
         this.body = body;
     }
 
-    public long getId() {
-        return id;
+    public Note(long id, String body) {
+        this.id = id;
+        this.body = body;
     }
 
-    // Only use in tests.
-    public void setId(long id) {
-        this.id = id;
+    public long getId() {
+        return id;
     }
 
     public String getBody() {

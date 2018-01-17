@@ -4,6 +4,7 @@ import notes.data.NoteRepository;
 import notes.models.Note;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,7 +25,11 @@ public class NoteService {
         try {
             noteRepository.delete(id);
         } catch (EmptyResultDataAccessException exception) {
-            throw new IllegalArgumentException("Note not found");
+            throw new ResourceNotFoundException("Note " + id + " not found");
         }
+    }
+
+    public void updateNote(Note note) {
+        noteRepository.save(note);
     }
 }

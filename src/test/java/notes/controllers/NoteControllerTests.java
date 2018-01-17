@@ -21,6 +21,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -42,7 +43,7 @@ public class NoteControllerTests {
     }
 
     @Test
-    public void shouldBeAbleToCreateGetAndDeleteNote() throws Exception {
+    public void shouldBeAbleToCreateUpdateGetAndDeleteNote() throws Exception {
         String bodyText = "A test body";
         Note note = new Note(bodyText);
         String jsonBody = mapper.writeValueAsString(note);
@@ -58,12 +59,23 @@ public class NoteControllerTests {
         MockHttpServletResponse response = result.getResponse();
         Note responseNote = mapper.readValue(response.getContentAsString(), Note.class);
 
+        // Update Note.
+        String updatedText = "updated body";
+        Note noteUpdate = new Note(responseNote.getId(), updatedText);
+        String updateJsonBody = mapper.writeValueAsString(noteUpdate);
+
+        mvc.perform(put("/api/notes/" + responseNote.getId())
+                .content(updateJsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+
         // Get Note.
         mvc.perform(get("/api/notes/" + responseNote.getId())
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.body")
-                .value(equalTo(note.getBody())));
+                .value(equalTo(noteUpdate.getBody())));
 
         // Delete Note.
         mvc.perform(delete("/api/notes/" + responseNote.getId())
@@ -96,9 +108,57 @@ public class NoteControllerTests {
     }
 
     @Test
-    public void delete_whenNoResourceExists_shouldReturnNoContent() throws Exception {
+    public void delete_whenNoResourceExists_shouldReturnNotFound() throws Exception {
         mvc.perform(delete("/api/notes/3")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void update_whenNoResourceExists_shouldReturnNotFound() throws Exception {
+        String bodyText = "A test body";
+        Note note = new Note(3, bodyText);
+        String jsonBody = mapper.writeValueAsString(note);
+
+        mvc.perform(put("/api/notes/3")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void update_whenIdsDontMatch_shouldReturnBadRequest() throws Exception {
+        String bodyText = "A test body";
+        Note note = new Note(2, bodyText);
+        String jsonBody = mapper.writeValueAsString(note);
+
+        mvc.perform(put("/api/notes/3")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void update_whenContentTypeIsNotSet_shouldReturnUnsupportedMediaType() throws Exception {
+        String bodyText = "A test body";
+        Note note = new Note(bodyText);
+        String jsonBody = mapper.writeValueAsString(note);
+
+        MvcResult result = mvc.perform(post("/api/notes")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        MockHttpServletResponse response = result.getResponse();
+        Note responseNote = mapper.readValue(response.getContentAsString(), Note.class);
+
+        mvc.perform(put("/api/notes/" + responseNote.getId())
+                .content(jsonBody)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnsupportedMediaType());
     }
 }
