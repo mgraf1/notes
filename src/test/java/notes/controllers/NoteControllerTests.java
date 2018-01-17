@@ -34,7 +34,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = Application.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class NoteControllerTests {
 
     @Autowired
@@ -125,10 +124,10 @@ public class NoteControllerTests {
     @Test
     public void update_whenNoResourceExists_shouldReturnNotFound() throws Exception {
         String bodyText = "A test body";
-        Note note = new Note(3, bodyText);
+        Note note = new Note(111, bodyText);
         String jsonBody = mapper.writeValueAsString(note);
 
-        mvc.perform(put("/api/notes/3")
+        mvc.perform(put("/api/notes/111")
                 .content(jsonBody)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
@@ -177,20 +176,6 @@ public class NoteControllerTests {
 
         assertThat(responseNotes, hasItem(hasProperty("id", is(id1))));
         assertThat(responseNotes, hasItem(hasProperty("id", is(id2))));
-    }
-
-    @Test
-    public void getAll_withNoNotes_shouldReturnEmptyList() throws Exception {
-        MvcResult result = mvc.perform(get("/api/notes")
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        MockHttpServletResponse response = result.getResponse();
-        List<Note> responseNotes = mapper.readValue(response.getContentAsString(),
-                new TypeReference<List<Note>>(){});
-
-        assertEquals(true, responseNotes.isEmpty());
     }
 
     @Test
