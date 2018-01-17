@@ -64,7 +64,10 @@ public class NoteController {
             method = RequestMethod.GET,
             produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
-    public List<Note> getAllNotes() {
+    public List<Note> getAllNotes(@RequestParam(required = false) String query) {
+        if (query != null) {
+            return noteService.getAllNotesByBody(query);
+        }
         return noteService.getAllNotes();
     }
 

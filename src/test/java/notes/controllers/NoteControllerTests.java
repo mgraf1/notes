@@ -3,18 +3,13 @@ package notes.controllers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import notes.Application;
-import notes.data.NoteRepository;
 import notes.models.Note;
-import org.aspectj.weaver.TypeFactory;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.annotation.DirtiesContext;
@@ -187,6 +182,41 @@ public class NoteControllerTests {
     @Test
     public void getAll_withNoNotes_shouldReturnEmptyList() throws Exception {
         MvcResult result = mvc.perform(get("/api/notes")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        MockHttpServletResponse response = result.getResponse();
+        List<Note> responseNotes = mapper.readValue(response.getContentAsString(),
+                new TypeReference<List<Note>>(){});
+
+        assertEquals(true, responseNotes.isEmpty());
+    }
+
+    @Test
+    public void getAll_withFilter_shouldReturnAllMatchingNotes() throws Exception {
+        long id1 = createNote("Some note");
+        long id2 = createNote("Some other note");
+
+        MvcResult result = mvc.perform(get("/api/notes?query=other")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        MockHttpServletResponse response = result.getResponse();
+        List<Note> responseNotes = mapper.readValue(response.getContentAsString(),
+                new TypeReference<List<Note>>(){});
+
+        assertThat(responseNotes, hasItem(hasProperty("id", not(is(id1)))));
+        assertThat(responseNotes, hasItem(hasProperty("id", is(id2))));
+    }
+
+    @Test
+    public void getAll_whenNoNotesMatchFilter_shouldReturnEmptyList() throws Exception {
+        createNote("Some note");
+        createNote("Some other note");
+
+        MvcResult result = mvc.perform(get("/api/notes?query=milk")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
