@@ -1,6 +1,6 @@
 # Notes Api
 
-This Rest API was implemented with [Spring Boot](https://projects.spring.io/spring-boot/) and uses the [Gradle](https://gradle.org/) build tool. Persistence is done with [h2](http://www.h2database.com/html/main.html) and in-memory database.
+This Rest API was implemented with [Spring Boot](https://projects.spring.io/spring-boot/) and uses the [Gradle](https://gradle.org/) build tool. Persistence is done with [h2](http://www.h2database.com/html/main.html) an in-memory database.
 
 ## Building the application
 
