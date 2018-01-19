@@ -15,6 +15,8 @@ gradlew.bat build
 
 ## Running the application
 
+The Spring Boot application is running on port 8080 locally. The base URL of the api is http://localhost:8080/api/notes
+
 Windows:
 ```
 gradlew.bat bootRun
